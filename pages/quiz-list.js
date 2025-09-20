@@ -222,7 +222,7 @@ export default function QuizList() {
                 key={quiz.id}
                 className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               >
-                <Link href={`/quiz/${quiz.slug}`}>
+                <Link href={`/quiz/${quiz.id}`}>
                   <div className="p-6">
                     {/* 썸네일 이미지 */}
                     {quiz.thumbnail_image && (
