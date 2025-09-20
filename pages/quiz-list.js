@@ -83,13 +83,13 @@ export default function QuizList() {
   const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case 'easy':
-        return 'bg-green-100 text-green-800'
+        return 'bg-green-900/30 text-green-400 border border-green-600'
       case 'medium':
-        return 'bg-yellow-100 text-yellow-800'
+        return 'bg-yellow-900/30 text-yellow-400 border border-yellow-600'
       case 'hard':
-        return 'bg-red-100 text-red-800'
+        return 'bg-red-900/30 text-red-400 border border-red-600'
       default:
-        return 'bg-gray-100 text-gray-800'
+        return 'bg-gray-700 text-gray-400'
     }
   }
 
@@ -117,10 +117,10 @@ export default function QuizList() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">퀴즈를 불러오는 중...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-400">퀴즈를 불러오는 중...</p>
         </div>
       </div>
     )
@@ -128,12 +128,12 @@ export default function QuizList() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600">{error}</p>
+          <p className="text-red-400">{error}</p>
           <button
             onClick={() => fetchQuizzes()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             다시 시도
           </button>
@@ -143,42 +143,36 @@ export default function QuizList() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 헤더 */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">퀴즈 목록</h1>
-          <p className="text-gray-600">다양한 주제의 퀴즈를 풀어보세요!</p>
+          <h1 className="text-3xl font-bold text-white mb-2">퀴즈 목록</h1>
+          <p className="text-gray-400">다양한 주제의 퀴즈를 풀어보세요!</p>
         </div>
 
         {/* 필터 및 검색 */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div className="bg-gray-800 rounded-xl p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* 검색 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                검색
-              </label>
               <input
                 type="text"
-                placeholder="퀴즈 제목 또는 설명 검색..."
+                placeholder="퀴즈 검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             {/* 카테고리 필터 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                카테고리
-              </label>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">전체</option>
+                <option value="all">전체 카테고리</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -189,15 +183,12 @@ export default function QuizList() {
 
             {/* 난이도 필터 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                난이도
-              </label>
               <select
                 value={selectedDifficulty}
                 onChange={(e) => setSelectedDifficulty(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">전체</option>
+                <option value="all">전체 난이도</option>
                 <option value="easy">쉬움</option>
                 <option value="medium">보통</option>
                 <option value="hard">어려움</option>
@@ -208,8 +199,8 @@ export default function QuizList() {
 
         {/* 퀴즈 목록 */}
         {filteredQuizzes.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <p className="text-gray-500">
+          <div className="bg-gray-800 rounded-xl p-8 text-center">
+            <p className="text-gray-400">
               {searchQuery || selectedCategory !== 'all' || selectedDifficulty !== 'all'
                 ? '검색 결과가 없습니다.'
                 : '아직 등록된 퀴즈가 없습니다.'}
@@ -218,51 +209,42 @@ export default function QuizList() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredQuizzes.map((quiz) => (
-              <div
-                key={quiz.id}
-                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-              >
-                <Link href={`/quiz/${quiz.id}`}>
+              <Link key={quiz.id} href={`/quiz/${quiz.id}`}>
+                <div className="bg-gray-800 rounded-xl hover:bg-gray-750 transition-all cursor-pointer">
+                  {/* 썸네일 이미지 */}
+                  {quiz.thumbnail_image && (
+                    <div className="h-40 bg-gray-700 rounded-t-xl overflow-hidden">
+                      <img
+                        src={quiz.thumbnail_image}
+                        alt={quiz.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  
                   <div className="p-6">
-                    {/* 썸네일 이미지 */}
-                    {quiz.thumbnail_image && (
-                      <div className="mb-4 h-40 bg-gray-100 rounded-md overflow-hidden">
-                        <img
-                          src={quiz.thumbnail_image}
-                          alt={quiz.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-
-                    {/* 카테고리 및 난이도 배지 */}
+                    {/* 카테고리 및 난이도 */}
                     <div className="flex items-center gap-2 mb-3">
                       {quiz.quiz_categories && (
-                        <span
-                          className="px-2 py-1 text-xs font-medium rounded-full"
-                          style={{
-                            backgroundColor: quiz.quiz_categories.color ? `${quiz.quiz_categories.color}20` : '#f3f4f6',
-                            color: quiz.quiz_categories.color || '#6b7280'
-                          }}
-                        >
+                        <span className="px-2 py-1 text-xs font-medium bg-gray-700 text-gray-300 rounded">
                           {quiz.quiz_categories.icon} {quiz.quiz_categories.name}
                         </span>
                       )}
                       {quiz.difficulty && (
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getDifficultyColor(quiz.difficulty)}`}>
+                        <span className={`px-2 py-1 text-xs font-medium rounded ${getDifficultyColor(quiz.difficulty)}`}>
                           {getDifficultyText(quiz.difficulty)}
                         </span>
                       )}
                     </div>
 
                     {/* 제목 */}
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    <h3 className="text-lg font-semibold text-white mb-2">
                       {quiz.title}
                     </h3>
 
                     {/* 설명 */}
                     {quiz.description && (
-                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                      <p className="text-sm text-gray-400 mb-4 line-clamp-2">
                         {quiz.description}
                       </p>
                     )}
@@ -279,21 +261,12 @@ export default function QuizList() {
                         )}
                       </div>
                       {quiz.attempt_count > 0 && (
-                        <span>{quiz.attempt_count}회 시도</span>
+                        <span>{quiz.attempt_count}회</span>
                       )}
                     </div>
-
-                    {/* 합격 점수 */}
-                    {quiz.pass_score && (
-                      <div className="mt-3 pt-3 border-t border-gray-100">
-                        <span className="text-xs text-gray-500">
-                          합격 점수: {quiz.pass_score}점 이상
-                        </span>
-                      </div>
-                    )}
                   </div>
-                </Link>
-              </div>
+                </div>
+              </Link>
             ))}
           </div>
         )}

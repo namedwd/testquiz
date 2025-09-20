@@ -346,7 +346,7 @@ export default function QuizPage() {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-gray-400">로딩 중...</p>
         </div>
       </div>
@@ -360,7 +360,7 @@ export default function QuizPage() {
           <p className="text-red-400 mb-4">{error}</p>
           <button
             onClick={() => router.push('/quiz-list')}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
           >
             목록으로
           </button>
@@ -372,71 +372,65 @@ export default function QuizPage() {
   // 퀴즈 설정 화면
   if (gameState === 'setup') {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-900">
         <Head>
           <title>{quizSet?.title || '퀴즈'}</title>
         </Head>
         
         <div className="max-w-lg mx-auto px-4 py-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-gray-800 rounded-xl p-6">
+            {/* 썸네일 */}
+            {quizSet?.thumbnail_image && (
+              <img 
+                src={quizSet.thumbnail_image} 
+                alt={quizSet.title}
+                className="w-full h-48 object-cover rounded-lg mb-6"
+              />
+            )}
+            
+            {/* 제목과 설명 */}
             <div className="text-center mb-6">
-              {quizSet?.thumbnail_image && (
-                <img 
-                  src={quizSet.thumbnail_image} 
-                  alt={quizSet.title}
-                  className="w-full h-40 object-cover rounded-lg mb-4"
-                />
-              )}
-              
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{quizSet?.title}</h1>
-              
+              <h1 className="text-2xl font-bold text-white mb-2">{quizSet?.title}</h1>
               {quizSet?.description && (
-                <p className="text-gray-600 text-sm">{quizSet.description}</p>
+                <p className="text-gray-400 text-sm">{quizSet.description}</p>
               )}
             </div>
             
-            <div className="border-t pt-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">문제 수 선택</h2>
-              
-              {questionsLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto"></div>
-                  <p className="mt-2 text-sm text-gray-500">준비 중...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    {getQuestionCountOptions().map(count => (
-                      <button
-                        key={count}
-                        onClick={() => startQuiz(count)}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all"
-                      >
-                        <div className="text-xl font-bold text-gray-900">{count}문제</div>
-                        {quizSet?.time_limit && (
-                          <div className="text-xs text-gray-500">
-                            {formatTime(Math.floor((quizSet.time_limit * count) / totalQuestionCount))}
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  <div className="text-xs text-gray-500 text-center">
-                    전체 {totalQuestionCount}문제 • 합격 {quizSet?.pass_score || 70}%
-                  </div>
-                </>
-              )}
+            {/* 문제 수 선택 */}
+            <div className="mb-4">
+              <p className="text-gray-400 text-sm mb-3">문제 수를 선택하세요</p>
+              <div className="grid grid-cols-2 gap-2">
+                {getQuestionCountOptions().map(count => (
+                  <button
+                    key={count}
+                    onClick={() => startQuiz(count)}
+                    className="p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-all"
+                  >
+                    <div className="text-xl font-bold text-white">{count}문제</div>
+                    {quizSet?.time_limit && (
+                      <div className="text-xs text-gray-400">
+                        {formatTime(Math.floor((quizSet.time_limit * count) / totalQuestionCount))}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
             </div>
             
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => router.push('/quiz-list')}
-                className="text-gray-500 hover:text-gray-700 text-sm"
-              >
-                ← 목록으로
-              </button>
+            {/* 정보 */}
+            <div className="text-center text-xs text-gray-500">
+              전체 {totalQuestionCount}문제 • 합격 {quizSet?.pass_score || 70}%
             </div>
+          </div>
+          
+          {/* 뒤로 가기 */}
+          <div className="mt-4 text-center">
+            <button
+              onClick={() => router.push('/quiz-list')}
+              className="text-gray-500 hover:text-gray-300 text-sm"
+            >
+              ← 목록으로
+            </button>
           </div>
         </div>
       </div>
@@ -450,7 +444,7 @@ export default function QuizPage() {
     const hasImage = currentQuestion?.question_image
     
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-900">
         <Head>
           <title>{quizSet?.title}</title>
         </Head>
@@ -459,62 +453,62 @@ export default function QuizPage() {
           {/* 헤더 */}
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-lg font-bold text-gray-900">
+              <span className="text-lg font-bold text-white">
                 {currentQuestionIndex + 1} / {questions.length}
               </span>
               {timeLeft !== null && (
-                <span className={`text-lg font-mono ${timeLeft < 30 ? 'text-red-500' : 'text-gray-600'}`}>
+                <span className={`text-lg font-mono ${timeLeft < 30 ? 'text-red-400' : 'text-gray-400'}`}>
                   {formatTime(timeLeft)}
                 </span>
               )}
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-700 rounded-full h-1">
               <div 
-                className="bg-indigo-500 h-2 rounded-full transition-all"
+                className="bg-blue-500 h-1 rounded-full transition-all"
                 style={{ width: `${progress}%` }}
               />
             </div>
           </div>
           
           {/* 콘텐츠 */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-gray-800 rounded-xl p-6">
             {/* 질문/이미지 */}
-            {hasImage || (showResult && currentQuestion?.explanation_image) ? (
-              <div className="mb-6">
-                <img 
-                  src={showResult && currentQuestion?.explanation_image 
-                    ? currentQuestion.explanation_image 
-                    : currentQuestion.question_image}
-                  alt={showResult && currentQuestion?.explanation_image ? "해설" : "문제"}
-                  className="w-full h-48 object-contain rounded-lg mb-3"
-                />
-                <p className="text-lg text-gray-900 text-center">
+            <div className="mb-6">
+              {hasImage || (showResult && currentQuestion?.explanation_image) ? (
+                <>
+                  <img 
+                    src={showResult && currentQuestion?.explanation_image 
+                      ? currentQuestion.explanation_image 
+                      : currentQuestion.question_image}
+                    alt={showResult && currentQuestion?.explanation_image ? "해설" : "문제"}
+                    className="w-full h-48 object-contain rounded-lg mb-4 bg-gray-700"
+                  />
+                  <p className="text-lg text-white text-center">
+                    {currentQuestion?.question_text}
+                  </p>
+                </>
+              ) : (
+                <p className="text-lg text-white text-center py-8">
                   {currentQuestion?.question_text}
                 </p>
-              </div>
-            ) : (
-              <div className="mb-6">
-                <p className="text-lg text-gray-900 text-center">
-                  {currentQuestion?.question_text}
-                </p>
-              </div>
-            )}
+              )}
+            </div>
             
             {/* 답변 영역 */}
             {!showResult ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {currentQuestion?.question_type === 'multiple_choice' && (
                   currentQuestion.quiz_options.map((option, index) => (
                     <button
                       key={option.id}
                       onClick={() => handleAnswer(option.id)}
-                      className="w-full text-left p-4 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all"
+                      className="w-full text-left p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-all"
                     >
                       <div className="flex items-center">
-                        <span className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center font-medium mr-3">
+                        <span className="w-8 h-8 bg-gray-600 rounded-lg flex items-center justify-center font-medium mr-3 text-gray-300">
                           {String.fromCharCode(65 + index)}
                         </span>
-                        <span className="text-gray-900">{option.option_text}</span>
+                        <span className="text-white">{option.option_text}</span>
                       </div>
                     </button>
                   ))
@@ -525,9 +519,9 @@ export default function QuizPage() {
                     <button
                       key={option.id}
                       onClick={() => handleAnswer(option.id)}
-                      className="w-full p-4 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-all"
+                      className="w-full p-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-all"
                     >
-                      <span className="text-lg font-medium text-gray-900">{option.option_text}</span>
+                      <span className="text-lg font-medium text-white">{option.option_text}</span>
                     </button>
                   ))
                 )}
@@ -542,12 +536,12 @@ export default function QuizPage() {
                       type="text"
                       name="answer"
                       placeholder="답을 입력하세요"
-                      className="w-full p-4 border border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none"
+                      className="w-full p-4 bg-gray-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
                       autoFocus
                     />
                     <button
                       type="submit"
-                      className="mt-3 w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+                      className="mt-3 w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors"
                     >
                       제출
                     </button>
@@ -559,8 +553,8 @@ export default function QuizPage() {
               <div>
                 <div className={`p-4 rounded-lg mb-4 ${
                   answers[currentQuestionIndex]?.isCorrect 
-                    ? 'bg-green-50 border border-green-200' 
-                    : 'bg-red-50 border border-red-200'
+                    ? 'bg-green-900/30 border border-green-600' 
+                    : 'bg-red-900/30 border border-red-600'
                 }`}>
                   <div className="text-center mb-2">
                     <span className="text-2xl">
@@ -569,16 +563,16 @@ export default function QuizPage() {
                   </div>
                   <p className={`text-center font-medium ${
                     answers[currentQuestionIndex]?.isCorrect 
-                      ? 'text-green-700' 
-                      : 'text-red-700'
+                      ? 'text-green-400' 
+                      : 'text-red-400'
                   }`}>
                     {answers[currentQuestionIndex]?.isCorrect ? '정답입니다!' : '틀렸습니다'}
                   </p>
                   
                   {quizSet?.show_correct_answer && !answers[currentQuestionIndex]?.isCorrect && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-sm text-gray-600">정답:</p>
-                      <p className="text-sm text-gray-900 font-medium">
+                    <div className="mt-3 pt-3 border-t border-gray-600">
+                      <p className="text-sm text-gray-400">정답:</p>
+                      <p className="text-sm text-white font-medium">
                         {currentQuestion.question_type === 'short_answer' 
                           ? currentQuestion.quiz_answers?.[0]?.answer_text
                           : currentQuestion.quiz_options.find(opt => opt.is_correct)?.option_text}
@@ -587,16 +581,16 @@ export default function QuizPage() {
                   )}
                   
                   {currentQuestion.explanation && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <p className="text-sm text-gray-600">해설:</p>
-                      <p className="text-sm text-gray-700">{currentQuestion.explanation}</p>
+                    <div className="mt-3 pt-3 border-t border-gray-600">
+                      <p className="text-sm text-gray-400">해설:</p>
+                      <p className="text-sm text-gray-300">{currentQuestion.explanation}</p>
                     </div>
                   )}
                 </div>
                 
                 <button
                   onClick={nextQuestion}
-                  className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   {currentQuestionIndex < questions.length - 1 ? '다음 문제' : '결과 보기'}
                 </button>
@@ -617,101 +611,62 @@ export default function QuizPage() {
     const correctCount = Object.values(answers).filter(ans => ans.isCorrect).length
     
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black flex items-center">
+      <div className="min-h-screen bg-gray-900 flex items-center">
         <Head>
-          <title>Results - {quizSet?.title}</title>
+          <title>결과 - {quizSet?.title}</title>
         </Head>
         
         <div className="max-w-lg mx-auto px-4 py-8 w-full">
-          <div className="bg-gray-800/50 backdrop-blur-lg rounded-2xl p-6 border border-gray-700">
+          <div className="bg-gray-800 rounded-xl p-6">
             <div className="text-center mb-6">
-              <div className="text-6xl mb-4">
-                {passed ? '🎆' : '💪'}
+              <div className="text-5xl mb-3">
+                {passed ? '🎉' : '💪'}
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">
-                {passed ? 'Great Job!' : 'Keep Trying!'}
+                {passed ? '축하합니다!' : '아쉬네요!'}
               </h1>
-              <p className="text-gray-400 text-sm">
-                {passed ? 'You passed the quiz!' : 'Try again to improve'}
+              <p className="text-gray-400">
+                {passed ? '퀴즈를 통과했습니다' : '다시 도전해보세요'}
               </p>
             </div>
             
-            <div className={`text-center p-6 rounded-xl mb-6 ${passed ? 'bg-green-900/20 border border-green-500/50' : 'bg-red-900/20 border border-red-500/50'}`}>
-              <div className={`text-5xl font-bold mb-2 ${passed ? 'text-green-400' : 'text-red-400'}`}>
+            <div className="text-center p-6 bg-gray-700 rounded-lg mb-6">
+              <div className="text-4xl font-bold text-white mb-1">
                 {percentage}%
               </div>
               <p className="text-gray-400">
-                {earnedPoints} / {totalPoints} points
+                {earnedPoints} / {totalPoints} 점
               </p>
             </div>
             
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="text-center p-4 bg-gray-900/50 rounded-xl border border-gray-700">
-                <div className="text-2xl font-bold text-green-400">{correctCount}</div>
-                <div className="text-xs text-gray-400">Correct</div>
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              <div className="text-center p-3 bg-gray-700 rounded-lg">
+                <div className="text-xl font-bold text-green-400">{correctCount}</div>
+                <div className="text-xs text-gray-400">정답</div>
               </div>
-              <div className="text-center p-4 bg-gray-900/50 rounded-xl border border-gray-700">
-                <div className="text-2xl font-bold text-red-400">{questions.length - correctCount}</div>
-                <div className="text-xs text-gray-400">Wrong</div>
+              <div className="text-center p-3 bg-gray-700 rounded-lg">
+                <div className="text-xl font-bold text-red-400">{questions.length - correctCount}</div>
+                <div className="text-xs text-gray-400">오답</div>
               </div>
-            </div>
-            
-            <div className="text-center p-3 bg-gray-900/50 rounded-xl border border-gray-700 mb-6">
-              <div className="text-sm text-gray-400">Time</div>
-              <div className="text-xl font-mono text-white">
-                {quizSet?.time_limit && timeLeft !== null ? 
-                  formatTime((Math.floor(quizSet.time_limit / totalQuestionCount) * selectedQuestionCount) - timeLeft) : '--:--'}
+              <div className="text-center p-3 bg-gray-700 rounded-lg">
+                <div className="text-xl font-bold text-white">{questions.length}</div>
+                <div className="text-xs text-gray-400">전체</div>
               </div>
             </div>
-            
-            {quizSet?.allow_review && (
-              <div className="mb-6">
-                <h2 className="text-sm font-semibold text-gray-400 mb-3">Question Results</h2>
-                <div className="space-y-2">
-                  {questions.map((question, index) => {
-                    const answer = answers[index]
-                    return (
-                      <div 
-                        key={index}
-                        className={`flex items-center justify-between p-3 rounded-lg ${
-                          answer?.isCorrect ? 'bg-green-900/20 border border-green-500/30' : 'bg-red-900/20 border border-red-500/30'
-                        }`}
-                      >
-                        <div className="flex items-center">
-                          <span className="mr-2 text-sm">
-                            {answer?.isCorrect ? '✅' : '❌'}
-                          </span>
-                          <span className="text-sm text-gray-300">
-                            Q{index + 1}
-                          </span>
-                        </div>
-                        <span className="text-sm text-gray-400">
-                          {answer?.pointsEarned || 0}/{question.points || 1}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
             
             <div className="space-y-3">
               <button
                 onClick={restartQuiz}
-                className="w-full bg-purple-600 text-white py-4 rounded-xl hover:bg-purple-700 transition-colors font-medium"
+                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                🔄 Try Again
+                다시 도전하기
               </button>
               <button
                 onClick={() => router.push('/quiz-list')}
-                className="w-full bg-gray-700 text-gray-300 py-4 rounded-xl hover:bg-gray-600 transition-colors"
+                className="w-full bg-gray-700 text-gray-300 py-3 rounded-lg hover:bg-gray-600 transition-colors"
               >
-                Back to List
+                목록으로
               </button>
-            </div>
-            
-            <div className="mt-4 text-center text-xs text-gray-500">
-              <p>🎲 New random questions each attempt</p>
             </div>
           </div>
         </div>
