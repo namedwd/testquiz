@@ -9,7 +9,7 @@ export default function QuizPage() {
   
   // 퀴즈 기본 정보
   const [quizSet, setQuizSet] = useState(null)
-  const [allQuestions, setAllQuestions] = useState([])
+  const [totalQuestionCount, setTotalQuestionCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   
@@ -23,6 +23,7 @@ export default function QuizPage() {
   const [timeLeft, setTimeLeft] = useState(null)
   const [attemptId, setAttemptId] = useState(null)
   const [selectedAnswer, setSelectedAnswer] = useState(null)
+  const [questionsLoading, setQuestionsLoading] = useState(false)
   
   // 타이머
   useEffect(() => {
@@ -34,14 +35,14 @@ export default function QuizPage() {
     }
   }, [timeLeft, gameState])
 
-  // 퀴즈 데이터 로드
+  // 퀴즈 기본 정보만 로드
   useEffect(() => {
     if (slug) {
-      fetchQuizData()
+      fetchQuizInfo()
     }
   }, [slug])
 
-  const fetchQuizData = async () => {
+  const fetchQuizInfo = async () => {
     try {
       setLoading(true)
       setError(null)
@@ -69,7 +70,44 @@ export default function QuizPage() {
 
       setQuizSet(quizData)
 
-      // 퀴즈 질문들 가져오기 - 모든 데이터를 한 번에 로드
+      // 전체 질문 개수만 가져오기
+      const { count, error: countError } = await supabase
+        .from('quiz_questions')
+        .select('*', { count: 'exact', head: true })
+        .eq('quiz_set_id', quizData.id)
+
+      if (countError) throw countError
+      setTotalQuestionCount(count || 0)
+      
+    } catch (error) {
+      console.error('Error fetching quiz info:', error)
+      setError('퀴즈를 불러오는 데 실패했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 무작위 질문 로드 (필요한 개수만)
+  const loadRandomQuestions = async (questionCount) => {
+    try {
+      setQuestionsLoading(true)
+      
+      // 1. 모든 질문의 ID만 가져오기
+      const { data: allIds, error: idsError } = await supabase
+        .from('quiz_questions')
+        .select('id')
+        .eq('quiz_set_id', quizSet.id)
+        .order('order_index')
+
+      if (idsError) throw idsError
+
+      // 2. 클라이언트에서 무작위 선택
+      const shuffledIds = allIds
+        .sort(() => Math.random() - 0.5)
+        .slice(0, questionCount)
+        .map(item => item.id)
+
+      // 3. 선택된 ID의 질문만 상세 정보 로드
       const { data: questionsData, error: questionsError } = await supabase
         .from('quiz_questions')
         .select(`
@@ -81,38 +119,45 @@ export default function QuizPage() {
             *
           )
         `)
-        .eq('quiz_set_id', quizData.id)
-        .order('order_index', { ascending: true })
+        .in('id', shuffledIds)
 
       if (questionsError) throw questionsError
       
-      // 각 질문의 옵션을 order_index로 정렬
-      const sortedQuestions = (questionsData || []).map(question => ({
-        ...question,
-        quiz_options: (question.quiz_options || []).sort((a, b) => a.order_index - b.order_index)
-      }))
+      // 4. 무작위 순서 유지 (in 쿼리는 순서를 보장하지 않음)
+      const questionsMap = new Map(questionsData.map(q => [q.id, q]))
+      const orderedQuestions = shuffledIds
+        .map(id => questionsMap.get(id))
+        .filter(Boolean)
+        .map(question => ({
+          ...question,
+          quiz_options: (question.quiz_options || []).sort((a, b) => a.order_index - b.order_index)
+        }))
       
-      setAllQuestions(sortedQuestions)
+      setQuestions(orderedQuestions)
+      return true
+      
     } catch (error) {
-      console.error('Error fetching quiz data:', error)
-      setError('퀴즈를 불러오는 데 실패했습니다.')
+      console.error('Error loading questions:', error)
+      setError('질문을 불러오는 데 실패했습니다.')
+      return false
     } finally {
-      setLoading(false)
+      setQuestionsLoading(false)
     }
   }
 
-  // 퀴즈 시작 - 모든 질문을 미리 준비
+  // 퀴즈 시작
   const startQuiz = async (questionCount) => {
     setSelectedQuestionCount(questionCount)
     
-    // 질문을 무작위로 섞고 선택된 개수만큼 선택
-    const shuffled = [...allQuestions].sort(() => Math.random() - 0.5)
-    const selected = shuffled.slice(0, questionCount)
-    setQuestions(selected) // 모든 질문을 미리 저장
+    // 선택한 개수만큼 무작위 질문 로드
+    const success = await loadRandomQuestions(questionCount)
+    if (!success) return
     
     // 시간 제한 설정
     if (quizSet.time_limit) {
-      setTimeLeft(quizSet.time_limit)
+      // 선택한 문제 수에 비례하여 시간 조정
+      const timePerQuestion = Math.floor(quizSet.time_limit / totalQuestionCount)
+      setTimeLeft(timePerQuestion * questionCount)
     }
     
     // 세션 ID 생성
@@ -139,15 +184,15 @@ export default function QuizPage() {
     setSelectedAnswer(null)
   }
 
-  // 답변 처리 - 즉시 처리, 서버 통신은 비동기
+  // 답변 처리
   const handleAnswer = useCallback((answer) => {
-    if (showResult) return // 이미 답변한 경우 무시
+    if (showResult) return
     
     const currentQuestion = questions[currentQuestionIndex]
     let isCorrect = false
     let pointsEarned = 0
     
-    // 정답 확인 (클라이언트에서 즉시 처리)
+    // 정답 확인
     if (currentQuestion.question_type === 'multiple_choice') {
       const selectedOption = currentQuestion.quiz_options.find(opt => opt.id === answer)
       isCorrect = selectedOption?.is_correct || false
@@ -187,7 +232,7 @@ export default function QuizPage() {
     // 결과 즉시 표시
     setShowResult(true)
     
-    // 서버에 비동기로 저장 (UI를 차단하지 않음)
+    // 서버에 비동기로 저장
     if (attemptId) {
       supabase
         .from('quiz_responses')
@@ -204,7 +249,7 @@ export default function QuizPage() {
     }
   }, [showResult, questions, currentQuestionIndex, attemptId])
 
-  // 다음 질문으로 - 즉시 전환
+  // 다음 질문으로
   const nextQuestion = useCallback(() => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1)
@@ -241,7 +286,8 @@ export default function QuizPage() {
           percentage: percentage,
           completed: true,
           completed_at: new Date().toISOString(),
-          time_spent: quizSet.time_limit ? quizSet.time_limit - (timeLeft || 0) : null
+          time_spent: quizSet.time_limit ? 
+            (Math.floor(quizSet.time_limit / totalQuestionCount) * selectedQuestionCount) - (timeLeft || 0) : null
         })
         .eq('id', attemptId)
         .then(() => {})
@@ -254,23 +300,32 @@ export default function QuizPage() {
     }
   }
 
+  // 퀴즈 재시작 (새로운 무작위 질문)
+  const restartQuiz = async () => {
+    setGameState('setup')
+    setAnswers({})
+    setCurrentQuestionIndex(0)
+    setShowResult(false)
+    setSelectedAnswer(null)
+    setQuestions([]) // 기존 질문 초기화
+  }
+
   // 퀴즈 개수 옵션 생성
   const getQuestionCountOptions = () => {
-    if (!allQuestions.length) return []
+    if (!totalQuestionCount) return []
     
-    const totalCount = allQuestions.length
     const options = []
     
-    for (let i = 5; i <= totalCount; i += 5) {
+    for (let i = 5; i <= totalQuestionCount; i += 5) {
       options.push(i)
     }
     
-    if (totalCount % 5 !== 0) {
-      options.push(totalCount)
+    if (totalQuestionCount % 5 !== 0) {
+      options.push(totalQuestionCount)
     }
     
-    if (totalCount < 5) {
-      return [totalCount]
+    if (totalQuestionCount < 5) {
+      return [totalQuestionCount]
     }
     
     return options
@@ -290,7 +345,7 @@ export default function QuizPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">퀴즈를 불러오는 중...</p>
+          <p className="mt-4 text-gray-600">퀴즈 정보를 불러오는 중...</p>
         </div>
       </div>
     )
@@ -366,33 +421,42 @@ export default function QuizPage() {
             <div className="border-t pt-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">문제 수 선택</h2>
               
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-                {getQuestionCountOptions().map(count => (
-                  <button
-                    key={count}
-                    onClick={() => startQuiz(count)}
-                    className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
-                  >
-                    <div className="text-2xl font-bold text-gray-900">{count}문제</div>
-                    <div className="text-sm text-gray-600">
-                      {quizSet?.time_limit && (
-                        `제한시간: ${formatTime(Math.floor((quizSet.time_limit * count) / allQuestions.length))}`
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-2">퀴즈 정보</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• 전체 문제: {allQuestions.length}개</li>
-                  <li>• 문제 순서: 무작위</li>
-                  <li>• 합격 점수: {quizSet?.pass_score || 70}점 이상</li>
-                  {quizSet?.time_limit && <li>• 시간 제한: 있음</li>}
-                  {quizSet?.show_correct_answer && <li>• 정답 확인: 가능</li>}
-                </ul>
-              </div>
+              {questionsLoading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-sm text-gray-600">문제를 준비하는 중...</p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                    {getQuestionCountOptions().map(count => (
+                      <button
+                        key={count}
+                        onClick={() => startQuiz(count)}
+                        className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all"
+                      >
+                        <div className="text-2xl font-bold text-gray-900">{count}문제</div>
+                        <div className="text-sm text-gray-600">
+                          {quizSet?.time_limit && (
+                            `제한시간: ${formatTime(Math.floor((quizSet.time_limit * count) / totalQuestionCount))}`
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="font-medium text-gray-900 mb-2">퀴즈 정보</h3>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• 전체 문제: {totalQuestionCount}개</li>
+                      <li>• 문제 순서: <span className="text-blue-600 font-medium">매번 새로운 무작위</span></li>
+                      <li>• 합격 점수: {quizSet?.pass_score || 70}점 이상</li>
+                      {quizSet?.time_limit && <li>• 시간 제한: 문제 수에 비례</li>}
+                      {quizSet?.show_correct_answer && <li>• 정답 확인: 가능</li>}
+                    </ul>
+                  </div>
+                </>
+              )}
             </div>
             
             <div className="mt-6 text-center">
@@ -448,9 +512,16 @@ export default function QuizPage() {
             
             {/* 메인 콘텐츠 - 고정 높이 */}
             <div className="p-6" style={{ minHeight: '500px' }}>
-              {/* 질문 영역 - 고정 높이 */}
+              {/* 질문/해설 영역 - 고정 높이 */}
               <div className="h-64 flex items-center justify-center mb-6 bg-gray-50 rounded-lg p-4">
-                {hasImage ? (
+                {/* 해설 이미지가 있고 결과를 보여주는 중이면 해설 이미지 표시 */}
+                {showResult && currentQuestion?.explanation_image ? (
+                  <img 
+                    src={currentQuestion.explanation_image}
+                    alt="해설"
+                    className="max-w-full max-h-full object-contain"
+                  />
+                ) : hasImage ? (
                   <img 
                     src={currentQuestion.question_image}
                     alt="문제"
@@ -556,6 +627,9 @@ export default function QuizPage() {
                       <div className="mt-4 p-3 bg-white rounded-lg">
                         <p className="text-sm font-medium text-gray-700 mb-1">해설:</p>
                         <p className="text-sm text-gray-600">{currentQuestion.explanation}</p>
+                        {currentQuestion.explanation_image && (
+                          <p className="text-xs text-gray-500 mt-2">💡 위 이미지 참고</p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -627,7 +701,8 @@ export default function QuizPage() {
               </div>
               <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <div className="text-2xl font-bold text-gray-900">
-                  {quizSet?.time_limit && timeLeft !== null ? formatTime(quizSet.time_limit - timeLeft) : '-'}
+                  {quizSet?.time_limit && timeLeft !== null ? 
+                    formatTime((Math.floor(quizSet.time_limit / totalQuestionCount) * selectedQuestionCount) - timeLeft) : '-'}
                 </div>
                 <div className="text-sm text-gray-600">소요 시간</div>
               </div>
@@ -666,16 +741,10 @@ export default function QuizPage() {
             
             <div className="flex flex-col sm:flex-row gap-4">
               <button
-                onClick={() => {
-                  setGameState('setup')
-                  setAnswers({})
-                  setCurrentQuestionIndex(0)
-                  setShowResult(false)
-                  setSelectedAnswer(null)
-                }}
+                onClick={restartQuiz}
                 className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                다시 도전하기
+                🔄 다시 도전하기 (새로운 문제)
               </button>
               <button
                 onClick={() => router.push('/quiz-list')}
@@ -683,6 +752,10 @@ export default function QuizPage() {
               >
                 퀴즈 목록으로
               </button>
+            </div>
+            
+            <div className="mt-4 text-center text-sm text-gray-500">
+              <p>💡 다시 도전하면 새로운 무작위 문제가 출제됩니다!</p>
             </div>
           </div>
         </div>
